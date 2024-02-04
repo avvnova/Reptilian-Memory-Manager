@@ -1,0 +1,113 @@
+.TH PROJECT 2 , 3/30/2023
+.SH NAME
+Project 2 - Memory Manager
+.SH SYNOPSIS
+The goal for this project was to implement a memory manager that could initialize, track, allocate, and deallocate memory.
+.SH DESCRIPTION
+Data structures are two lists for holes (\fBholes\fR) and blocks (\fBblocks\fR) and a vector of <uint8_t>, equivalent to one byte per element, for allocated memory. 
+.PP
+Variables are \fBword_size\fR, \fBword_count\fR, \fBbyte_count\fR, initialization( \fBinit\fR ), and pointers to the \fBhole_list\fR and \fBbit_map\fR arrays used in \fIgetList()\fR and \fIgetBitMap\fR();
+.RS
+.SS FUNCTIONS
+.TP
+\fIMemoryManager\fR(unsigned wordSize, std::function<int(int, void *)> allocator))
+Sets \fBword_size\fR and the allocator function.
+.TP
+\fI~MemoryManager()\fR
+Destructor. If dynamic memory is still allocated, calls \fIshutdown()\fR.
+.TP
+\fIvoid initialize\fR(size_t sizeInWords)
+Sets \fBword_count\fR, \fBbyte_count\fR, and allocates \fBmem\fR. If \fBmem\fR is already allocated, calls \fIshutdown()\fR to avoid memory leaks. Once allocated, emplaces an element in \fBholes\fR to represent the empty memory block.
+.TP
+\fIvoid shutdown()\fR
+Deallocates dynamic memory.
+.TP
+\fIvoid *allocate\fR(size_t sizeInBytes)
+.IP
+Uses sizeInBytes find the amount of words the block takes up.
+.IP
+Calls allocator function with \fIgetList()\fR to get the offset.
+.IP
+Iterates through \fBholes\fR and either removes the hole entirely, or modifies it if there is still space. 
+.IP
+Inserts into \fBblocks\fR.
+.IP
+Performs pointer arithmetic to return an address to the offset in \fBmem\fR.
+.TP
+\fIvoid free(void *address)\fR
+.IP
+Performs pointer arithmetic on to get offset value in words.
+.IP
+Searches \fBblocks\fR for the offset. Once found, erases the corresponding block.
+.IP
+Searches \fBholes\fR for where the block ended (either a hole or the end of memory), and inserts a new hole.
+.IP
+Uses the \fIcombine_holes\fR function to combine adjacent holes. 
+.TP
+\fI void setAllocator\fR(std::function<int(int, void *)> allocator)
+Sets allocator function.
+.TP
+\fI int dumpMemoryMap\fR(char *filename)
+.IP
+Opens or creates and opens a file 'filename'.
+.IP
+Calls \fIgetList()\fR to get array of holes.
+.IP
+Iterates through, adding values to a string(uses \fImakeEntry\fR to create the '[offset, length]' format for each hole).
+.IP
+Once iterated through, writes string to file.
+.TP
+\fI void *getList()\fR
+Iterates through \fBholes\fR, copying to \fBhole_list\fR.
+.TP
+\fIvoid* getBitmap()\fR
+.IP
+Initializes a bitstream representing a full block of memory and sets the \fBbit_map\fR size. 
+.IP
+Calls \fIgetList\fR and iterates, inserting data into the bitstream.
+.IP
+Iterates through \fBbit_map\fR and \fBbitstream\fR, recording data from the latter into the former. 
+.TP
+\fI void* getWordSize()\fR
+Returns \fBword_size\fR.
+.TP
+\fI void *getMemoryStart()\fR
+Returns \fBmem\fR.
+.TP
+\fI unsigned getMemoryLimit()\fR
+Returns \fBnum_bytes\fR.
+.TP
+\fI void combineHoles()\fR
+Checks \fBholes\fR and combines if they are adjacent in allocated memory.
+.TP
+\fIint bestFit/worstFit\fR(int sizeInWords, void * list)
+Creates a best/worst fit value, casts \fBlist\fR into a vector, and iterates through. If a hole can fit sizeInWords, and there is no value yet in the best/worst fit value, records that hole's data. If there is already a hole in best/worst fit, compares the length of the two and ensures the best/worst fit is recorded, depending on the function. Once iteration completes, returns the offset.
+.SS FILES
+.TP
+\fBMemoryManager.h\fR
+Function declarations, data structures, and objects.
+.TP
+\fBMemoryManager.cpp\fR
+Function definitions.
+.RE
+.SH TESTING
+The testing process used output debugging, gdb, and valgrind.
+.PP
+My two main issues were from memory leaks and faulty logic. Memory leaks caused undefined behavior, double free() aborts, and stack overflow errors, while faulty logic caused segmentation faults and improper execution. 
+.PP
+My solution involved planning which data structures would use dynamic structures such as vectors and which would use the new keyword. From there, I closed memory leaks by calling \fBdelete[]\fR on any object that used the new keyword. Once memory leaks were closed, I tested my logic through output debugging and gdb.
+.SH BUGS
+All known bugs were removed.
+.SH LINK
+https://youtu.be/_2gCid7qK5M
+.SH REFERENCES
+.TP
+https://www.techiedelight.com/add-leading-zeros-to-string-in-cpp/
+.TP
+https://stackoverflow.com/questions/57856072/how-to-change-uint16-t-to-two-uint8-t
+.TP
+https://valgrind.org/docs/manual/manual.html
+.TP
+https://man7.org/linux/man-pages/man2/ftruncate.2.html
+.SH AUTHOR
+Adrian E. Velez Villanueva
